@@ -1,0 +1,12 @@
+[
+  {
+    "repository": "AOKP/kernel_lge_mako",
+    "target_path": "kernel/lge/mako",
+    "branch":      "kitkat"
+  },
+  {
+    "repository": "AOKP/vendor_lge",
+    "target_path": "vendor/lge",
+    "branch":      "kitkat"
+  }
+]
