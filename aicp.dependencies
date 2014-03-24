@@ -1,12 +1,22 @@
 [
-  {
-    "repository": "AOKP/kernel_lge_mako",
-    "target_path": "kernel/lge/mako",
-    "branch":      "kitkat"
+ {
+   "repository": "AOKP/kernel_lge_mako",
+   "target_path": "kernel/lge/mako",
+   "branch":      "kitkat"
+ },
+ {
+   "repository":  "SlimRoms/proprietary_vendor_qcom",
+   "target_path": "vendor/qcom",
+   "branch":      "kk4.4"
+ },
+ {
+   "repository":  "SlimRoms/proprietary_vendor_broadcom",
+   "target_path": "vendor/broadcom",
+   "branch":      "kk4.4"
   },
   {
-    "repository": "AOKP/vendor_lge",
-    "target_path": "vendor/lge",
-    "branch":      "kitkat"
+   "repository": "SlimRoms/proprietary_vendor_lge",
+   "target_path": "vendor/lge",
+   "branch":      "kk4.4"
   }
 ]
