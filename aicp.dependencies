@@ -5,18 +5,8 @@
    "branch":      "kitkat"
  },
  {
-   "repository":  "SlimRoms/proprietary_vendor_qcom",
-   "target_path": "vendor/qcom",
-   "branch":      "kk4.4"
- },
- {
-   "repository":  "SlimRoms/proprietary_vendor_broadcom",
-   "target_path": "vendor/broadcom",
-   "branch":      "kk4.4"
-  },
-  {
-   "repository": "SlimRoms/proprietary_vendor_lge",
+   "repository":  "AOKP/vendor_lge",
    "target_path": "vendor/lge",
-   "branch":      "kk4.4"
-  }
+   "branch":      "kitkat"
+ }
 ]
