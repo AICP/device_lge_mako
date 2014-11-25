@@ -16,6 +16,7 @@
 
 import init.mako.usb.rc
 import init.mako_svelte.rc
+import init.mako_tiny.rc
 
 on early-init
     mount debugfs debugfs /sys/kernel/debug
@@ -26,9 +27,6 @@ on init
     mkdir /mnt/shell/emulated 0700 shell shell
     mkdir /storage/emulated 0555 root root
 
-    mkdir /mnt/media_rw/usbdisk 0700 media_rw media_rw
-    mkdir /storage/usbdisk 0700 root root
-
     # Set permissions for persist partition
     mkdir /persist 0771 system system
     mkdir /firmware 0771 system system
@@ -36,7 +34,6 @@ on init
     export EXTERNAL_STORAGE /storage/emulated/legacy
     export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
     export EMULATED_STORAGE_TARGET /storage/emulated
-    export SECONDARY_STORAGE /storage/usbdisk
 
     # Support legacy paths
     symlink /storage/emulated/legacy /sdcard
@@ -48,14 +45,14 @@ on init
     # the MCC. This is needed by RIL.
     setprop persist.radio.custom_ecc "1"
     setprop persist.radio.custom_ecc_mcc "{234,235,424,426,427,430,431:999},{334:060,066},{422:9999},{730:133}"
-    setprop persist.radio.custom_ecc_mcc_ex "{450:111,112,113,119,122,125,127},{724:190}"
+    setprop persist.radio.custom_ecc_mcc_ex "{450:111,112,113,119,122,125,127},{724:190},{425:100,101,102}"
     setprop persist.radio.custom_ecc_voice "{515:117},{452:113,114,115}"
     setprop persist.radio.custom_ecc_hard "911,*911,#911,112,999,000,08,118,120,122,110,119,995,111,113,125,127,133"
 
 on fs
     mount_all ./fstab.mako
+    restorecon_recursive /persist
     setprop ro.crypto.fuse_sdcard true
-    write /sys/kernel/boot_adsp/boot 1
 
 on early-boot
     # set RLIMIT_MEMLOCK to 64MB
@@ -129,6 +126,8 @@ on boot
     write /proc/sys/net/ipv6/conf/rmnet_sdio6/accept_ra 2
     write /proc/sys/net/ipv6/conf/rmnet_sdio7/accept_ra 2
 
+    #Enable logging of the wake up reasons in the kernel log
+    write /sys/module/msm_show_resume_irq/parameters/debug_mask 1
 
 # NFC: create data/nfc for nv storage
     mkdir /data/nfc 770 nfc nfc
@@ -141,25 +140,18 @@ on boot
 
 # msm specific files that need to be created on /data
 on post-fs-data
+    write /sys/kernel/boot_adsp/boot 1
+
     mkdir /data/media 0770 media_rw media_rw
 
-    # Create the directories used by the Wireless subsystem
-    mkdir /data/misc/wifi 0770 wifi wifi
-    mkdir /data/misc/wifi/sockets 0770 wifi wifi
-    mkdir /data/misc/wifi/wpa_supplicant 0770 wifi wifi
-    mkdir /data/misc/dhcp 0770 dhcp dhcp
 # to observe dnsmasq.leases file for dhcp information of soft ap.
     chown dhcp system /data/misc/dhcp
 
-    write /dev/wcnss_wlan 1
+    chown system system /dev/wcnss_wlan
     write /sys/module/wcnss_ssr_8960/parameters/enable_riva_ssr 1
 
     # Create directory used by audio subsystem
     mkdir /data/misc/audio 0770 audio audio
-
-    # Workaround for conn_init not copying the updated firmware
-    rm /data/misc/wifi/WCNSS_qcom_cfg.ini
-    rm /data/misc/wifi/WCNSS_qcom_wlan_nv.bin
 
     # Mounting of persist is moved to 'on emmc-fs' and 'on fs' sections
     # We chown/chmod /persist again so because mount is run as root + defaults
@@ -183,6 +175,7 @@ on post-fs-data
     mkdir /data/system/sensors
     chmod 665 /data/system/sensors
     write /data/system/sensors/settings 1
+    restorecon /data/system/sensors/settings
     chmod 660 /data/system/sensors/settings
 
     # AKM setting data
@@ -211,8 +204,7 @@ on post-fs-data
     chown system system /sys/class/leds/red/device/lock
 
     # communicate with mpdecision and thermald
-    mkdir /dev/socket/mpdecision 0770 system system
-    chmod 2770 /dev/socket/mpdecision
+    mkdir /dev/socket/mpdecision 2770 root system
 
     # adjust vibrator amplitude
     write /sys/class/timed_output/vibrator/amp 70
@@ -222,33 +214,76 @@ on post-fs-data
     write /sys/module/rpm_resources/enable_low_power/pxo 1
     write /sys/module/rpm_resources/enable_low_power/vdd_dig 1
     write /sys/module/rpm_resources/enable_low_power/vdd_mem 1
+    write /sys/module/pm_8x60/modes/cpu0/retention/idle_enabled 0
+    write /sys/module/pm_8x60/modes/cpu1/retention/idle_enabled 1
+    write /sys/module/pm_8x60/modes/cpu2/retention/idle_enabled 1
+    write /sys/module/pm_8x60/modes/cpu3/retention/idle_enabled 1
     write /sys/module/pm_8x60/modes/cpu0/power_collapse/suspend_enabled 1
     write /sys/module/pm_8x60/modes/cpu1/power_collapse/suspend_enabled 1
     write /sys/module/pm_8x60/modes/cpu2/power_collapse/suspend_enabled 1
     write /sys/module/pm_8x60/modes/cpu3/power_collapse/suspend_enabled 1
+    write /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/suspend_enabled 1
+    write /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/suspend_enabled 1
+    write /sys/module/pm_8x60/modes/cpu2/standalone_power_collapse/suspend_enabled 1
+    write /sys/module/pm_8x60/modes/cpu3/standalone_power_collapse/suspend_enabled 1
+    write /sys/module/pm_8x60/modes/cpu0/standalone_power_collapse/idle_enabled 1
+    write /sys/module/pm_8x60/modes/cpu1/standalone_power_collapse/idle_enabled 1
+    write /sys/module/pm_8x60/modes/cpu2/standalone_power_collapse/idle_enabled 1
+    write /sys/module/pm_8x60/modes/cpu3/standalone_power_collapse/idle_enabled 1
     write /sys/module/pm_8x60/modes/cpu0/power_collapse/idle_enabled 1
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "ondemand"
+    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor "ondemand"
+    write /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor "ondemand"
+    write /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor "ondemand"
+    write /sys/devices/system/cpu/cpufreq/ondemand/up_threshold 90
+    write /sys/devices/system/cpu/cpufreq/ondemand/sampling_rate 50000
+    write /sys/devices/system/cpu/cpufreq/ondemand/io_is_busy 1
+    write /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor 4
+    write /sys/devices/system/cpu/cpufreq/ondemand/down_differential 10
+    write /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_multi_core 60
+    write /sys/devices/system/cpu/cpufreq/ondemand/down_differential_multi_core 3
+    write /sys/devices/system/cpu/cpufreq/ondemand/optimal_freq 918000
+    write /sys/devices/system/cpu/cpufreq/ondemand/sync_freq 1026000
+    write /sys/devices/system/cpu/cpufreq/ondemand/up_threshold_any_cpu_load 80
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 384000
     write /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq 384000
     write /sys/devices/system/cpu/cpu2/cpufreq/scaling_min_freq 384000
     write /sys/devices/system/cpu/cpu3/cpufreq/scaling_min_freq 384000
+    write /sys/devices/system/cpu/cpu1/online 1
+    write /sys/devices/system/cpu/cpu2/online 1
+    write /sys/devices/system/cpu/cpu3/online 1
+    write /dev/cpuctl/apps/cpu.notify_on_migrate 1
 
-    # interactive
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "interactive"
-    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor "interactive"
-    write /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor "interactive"
-    write /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor "interactive"
-    write /sys/devices/system/cpu/cpufreq/interactive/io_is_busy 1
-    write /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay "20000 1400000:40000 1700000:20000"
-    write /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load 90
-    write /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq 1190400
-    write /sys/devices/system/cpu/cpufreq/interactive/target_loads "85 1500000:90 1800000:70"
-    write /sys/devices/system/cpu/cpufreq/interactive/min_sample_time 40000
-    write /sys/devices/system/cpu/cpufreq/interactive/sampling_down_factor 100000
+    # Chown cpu online files as needed for the Settings app
+    chown system system /sys/devices/system/cpu/cpu1/online
+    chown system system /sys/devices/system/cpu/cpu2/online
+    chown system system /sys/devices/system/cpu/cpu3/online
 
-    write /sys/module/cpu_boost/parameters/boost_ms 20
-    write /sys/module/cpu_boost/parameters/sync_threshold 1728000
-    write /sys/module/cpu_boost/parameters/input_boost_freq 1497600
-    write /sys/module/cpu_boost/parameters/input_boost_ms 40
+    # Hardware tunables
+    chown root system /sys/class/timed_output/vibrator/amp
+    chown root system /sys/devices/platform/kcal_ctrl.0/kcal
+    chown root system /sys/devices/platform/kcal_ctrl.0/kcal_ctrl
+    chown root system /sys/devices/platform/mipi_lgit.1537/kgamma_r
+    chown root system /sys/devices/platform/mipi_lgit.1537/kgamma_g
+    chown root system /sys/devices/platform/mipi_lgit.1537/kgamma_b
+    chown root system /sys/devices/platform/mipi_lgit.1537/kgamma_apply
+    chmod 0664 /sys/class/timed_output/vibrator/amp
+    chmod 0664 /sys/devices/platform/kcal_ctrl.0/kcal
+    chmod 0664 /sys/devices/platform/kcal_ctrl.0/kcal_ctrl
+    chmod 0664 /sys/devices/platform/mipi_lgit.1537/kgamma_r
+    chmod 0664 /sys/devices/platform/mipi_lgit.1537/kgamma_g
+    chmod 0664 /sys/devices/platform/mipi_lgit.1537/kgamma_b
+    chmod 0664 /sys/devices/platform/mipi_lgit.1537/kgamma_apply
+    restorecon /sys/class/timed_output/vibrator/amp
+    restorecon /sys/devices/platform/kcal_ctrl.0/kcal
+    restorecon /sys/devices/platform/kcal_ctrl.0/kcal_ctrl
+    restorecon /sys/devices/platform/mipi_lgit.1537/kgamma_r
+    restorecon /sys/devices/platform/mipi_lgit.1537/kgamma_g
+    restorecon /sys/devices/platform/mipi_lgit.1537/kgamma_b
+    restorecon /sys/devices/platform/mipi_lgit.1537/kgamma_apply
+
+    # disable diag port
+    rm /dev/diag
 
 on charger
     # Enable Power modes and set the CPU Freq Sampling rates
@@ -283,11 +318,13 @@ on property:init.svc.wpa_supplicant=stopped
 service rmt_storage /system/bin/rmt_storage
     class core
     user root
+    group system
 
 service hciattach /system/bin/sh /system/etc/init.mako.bt.sh
     class late_start
     user bluetooth
     group qcom_oncrpc bluetooth net_bt_admin system
+    seclabel u:r:bluetooth_loader:s0
     disabled
     oneshot
 
@@ -301,6 +338,7 @@ service bridgemgrd /system/bin/bridgemgrd
     class main
     user radio
     group radio
+    disabled
 
 # QMUX must be in multiple groups to support external process connections
 service qmuxd /system/bin/qmuxd
@@ -316,17 +354,16 @@ service kickstart /system/bin/qcks -i /firmware/image/ -r /data/tombstones/mdm/
 
 service netmgrd /system/bin/netmgrd
     class main
-
+    group radio
 
 service sensors /system/bin/sensors.qcom
     class late_start
     user root
-    group root
+    group root radio system
 
 service wpa_supplicant /system/bin/wpa_supplicant \
     -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
     -I/system/etc/wifi/wpa_supplicant_overlay.conf \
-    -O/data/misc/wifi/sockets \
     -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
     #   we will start as root and wpa_supplicant will switch to user wifi
     #   after setting up the capabilities required for WEXT
@@ -342,7 +379,7 @@ service p2p_supplicant /system/bin/wpa_supplicant \
     -I/system/etc/wifi/p2p_supplicant_overlay.conf -N \
     -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
     -I/system/etc/wifi/wpa_supplicant_overlay.conf \
-    -O/data/misc/wifi/sockets -puse_p2p_group_interface=1 \
+    -puse_p2p_group_interface=1 \
     -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
 #   we will start as root and wpa_supplicant will switch to user wifi
 #   after setting up the capabilities required for WEXT
@@ -383,10 +420,12 @@ service iprenew_bt-pan /system/bin/dhcpcd -n
 
 on property:ro.data.large_tcp_window_size=true
     # Adjust socket buffer to enlarge TCP receive window for high bandwidth (e.g. DO-RevB)
-    write /proc/sys/net/ipv4/tcp_adv_win_scale  1
+    write /proc/sys/net/ipv4/tcp_adv_win_scale  2
 
-service charger /charger
+service charger /sbin/healthd -c
     class charger
+    critical
+    seclabel u:r:healthd:s0
 
 # virtual sdcard daemon running as media_rw (1023)
 service sdcard /system/bin/sdcard -u 1023 -g 1023 -l /data/media /mnt/shell/emulated
@@ -394,23 +433,23 @@ service sdcard /system/bin/sdcard -u 1023 -g 1023 -l /data/media /mnt/shell/emul
 
 service thermald /system/bin/thermald
     class main
+    group radio system
 
 service mpdecision /system/bin/mpdecision --no_sleep --avg_comp
     class main
-
-service fuse_usbdisk /system/bin/sdcard -u 1023 -g 1023 -d /mnt/media_rw/usbdisk /storage/usbdisk
-    class late_start
-    disabled
+    user root
+    group root system
 
 service qcamerasvr /system/bin/mm-qcamera-daemon
     class late_start
     user camera
     group camera system inet input
 
-service conn_init /system/bin/conn_init
-    class late_start
+service wcnss_init /system/bin/sh /system/etc/init.mako.wifi.sh
+    class main
     user system
     group system wifi
+    seclabel u:r:conn_init:s0
     oneshot
 
 service bdAddrLoader /system/bin/bdAddrLoader -f /persist/bluetooth/.bdaddr -h -x
@@ -428,13 +467,18 @@ service bugreport /system/bin/dumpstate -d -p -B \
     keycodes 114 115 116
 
 service qseecomd /system/bin/qseecomd
-    class late_start
-    user system
-    group system
+    class core
+    user root
+    group root
 
 service diag_mdlog /system/bin/diag_mdlog -s 100
     class late_start
     disabled
+
+service qrngd /system/bin/qrngd -f
+    class main
+    user root
+    group root
 
 # on property:gsm.sim.state=READY
 #    start diag_mdlog
