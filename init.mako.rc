@@ -285,6 +285,9 @@ on post-fs-data
     # disable diag port
     rm /dev/diag
 
+    # disable diag port
+    rm /dev/diag
+
 on charger
     # Enable Power modes and set the CPU Freq Sampling rates
     write /sys/module/rpm_resources/enable_low_power/L2_cache 1
@@ -446,7 +449,7 @@ service qcamerasvr /system/bin/mm-qcamera-daemon
     group camera system inet input
 
 service wcnss_init /system/bin/sh /system/etc/init.mako.wifi.sh
-    class main
+    class late_start
     user system
     group system wifi
     seclabel u:r:conn_init:s0
@@ -493,10 +496,10 @@ on property:sys.perf.profile=0
 # Balanced
 on property:sys.perf.profile=1
     start mpdecision
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "interactive"
-    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor "interactive"
-    write /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor "interactive"
-    write /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor "interactive"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "ondemand"
+    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor "ondemand"
+    write /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor "ondemand"
+    write /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor "ondemand"
     write /sys/class/kgsl/kgsl-3d0/pwrscale/trustzone/governor "ondemand"
 
 # Performance
