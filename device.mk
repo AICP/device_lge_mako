@@ -240,6 +240,7 @@ PRODUCT_PACKAGES += \
 	power.mako
 
 # Snap (Snapdragon) camera
+ifneq (,$(filter eng, $(TARGET_BUILD_VARIANT)))
 PRODUCT_PACKAGES += \
     Snap
 
