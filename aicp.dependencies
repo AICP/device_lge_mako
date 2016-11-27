@@ -1,0 +1,12 @@
+[
+    {
+        "repository":   "CyanogenMod/lge-kernel-mako",
+        "target_path":  "kernel/lge/mako",
+        "branch":       "cm-14.1"
+    },
+    {
+        "repository":   "AICP/proprietary_vendor_lge",
+        "target_path":  "vendor/lge",
+        "branch":       "n7.1"
+    }
+]
