@@ -1,5 +1,5 @@
 # Bluetooth executables and scripts
-type bluetooth_loader, domain;
+type bluetooth_loader, domain, domain_deprecated;
 type bluetooth_loader_exec, exec_type, file_type;
 
 # Start bdAddrLoader from init
@@ -26,3 +26,5 @@ allow { bluetooth bluetooth_loader } bluetooth_prop:property_service set;
 # Allow getprop/setprop for init.mako.bt.sh
 allow bluetooth_loader system_file:file execute_no_trans;
 allow bluetooth_loader toolbox_exec:file rx_file_perms;
+
+unix_socket_connect(bluetooth_loader, property, init)
