@@ -27,7 +27,6 @@ PRODUCT_PACKAGES := \
     lights.mako \
     libwpa_client \
     hostapd \
-    dhcpcd.conf \
     wpa_supplicant \
     wpa_supplicant.conf
 
@@ -174,7 +173,8 @@ PRODUCT_COPY_FILES += \
 	device/lge/mako/init.mako.bt.sh:system/bin/init.mako.bt.sh
 
 PRODUCT_PROPERTY_OVERRIDES += \
-	ro.qualcomm.bt.hci_transport=smd
+	ro.qualcomm.bt.hci_transport=smd \
+	qcom.bluetooth.soc=smd
 
 ifeq ($(findstring tiny, $(TARGET_PRODUCT)),)
 PRODUCT_PACKAGES += \
@@ -267,6 +267,9 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PACKAGES += \
     Snap
 
-$(call inherit-product, frameworks/native/build/phone-xhdpi-2048-dalvik-heap.mk)
+PRODUCT_PROPERTY_OVERRIDES += \
+    media.stagefright.legacyencoder=true \
+    media.stagefright.less-secure=true \
+    persist.camera.cpp.duplication=false
 
-$(call inherit-product, hardware/qcom/msm8960/msm8960.mk)
+$(call inherit-product, frameworks/native/build/phone-xhdpi-2048-dalvik-heap.mk)
